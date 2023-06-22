@@ -6,7 +6,10 @@ const ejs = require('ejs');
 const app = express();
 const port = 3000;
 const mongoose = require('mongoose');
-const md5 = require('md5');
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
+
+// const md5 = require('md5'); md5 Hashing
 // const encrypt = require('mongoose-encryption'); Simple Encryption
 
 mongoose.connect(process.env.DB_URL)
@@ -44,29 +47,36 @@ app.get('/submit',(req,res)=>{
     res.render("submit")
 })
 
+
+
 app.post('/register',(req,res)=>{ // Register
 
+    const hash = bcrypt.hashSync(req.body.password, saltRounds);
+ 
     const newUser = new user({
-        email:req.body.username,
-        password:md5(req.body.password)
-    })
-
+      email: req.body.username,
+   
+            // bcrypt
+      password: hash
+    });
     newUser.save().then(()=>{
-        res.render("secrets");
+      res.render("secrets");
     }).catch((err)=>{
-        res.send(err);
+       consule.log(err)
     })
-
-})
+  });
 
 app.post('/login',(req,res)=>{
 
     const username= req.body.username;
-    const password=md5(req.body.password);
+    // const password=md5(req.body.password);
+    
+    const password=req.body.password;
+
 
     user.findOne({ email:username}).then((userFound) => {
         if (userFound) {
-        if (userFound.password==password) {
+        if (bcrypt.compareSync(password, userFound.password)) {
             res.render("secrets");
         }
         }
